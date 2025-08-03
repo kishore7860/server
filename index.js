@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const { Connector } = require('@google-cloud/cloud-sql-connector');
-const { Pool } = require('pg');
 require('dotenv').config();
 async function main() {
   const connector = new Connector();
@@ -31,13 +30,13 @@ async function main() {
     const { username, password } = req.body;
 
     try {
-      const existing = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+      const existing = await clientOpts.query('SELECT * FROM users WHERE username = $1', [username]);
       if (existing.rows.length > 0) {
         return res.status(400).json({ message: 'User already exists' });
       }
 
       const hashed = await bcrypt.hash(password, 10);
-      await pool.query('INSERT INTO users (username, password) VALUES ($1, $2)', [username, hashed]);
+      await clientOpts.query('INSERT INTO users (username, password) VALUES ($1, $2)', [username, hashed]);
 
       res.json({ message: 'Signup successful', token, username });
 
@@ -52,7 +51,7 @@ async function main() {
     const { username, password } = req.body;
 
     try {
-      const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+      const result = await clientOpts.query('SELECT * FROM users WHERE username = $1', [username]);
       const user = result.rows[0];
 
       if (!user) return res.status(400).json({ message: 'Invalid username or password' });
